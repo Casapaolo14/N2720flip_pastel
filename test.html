@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sorbet Brutalism</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Rubik+Bubbles&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --lilac:#F0D9EF; --mint:#CDE9DC; --butter:#FFE6BB;
+    --blue:#C4DFE5; --sage:#E9ECCE; --blush:#FCDCE1;
+    --ink:#000; --paper:#FFFDF7;
+    --shadow:6px 6px 0 var(--ink);
+    --border:3px solid var(--ink);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"Space Mono",monospace;
+    background-image:radial-gradient(var(--ink) 1px,transparent 1px);
+    background-size:22px 22px;
+  }
+  .wrap{max-width:1000px;margin:0 auto;padding:40px 16px;display:grid;gap:32px}
+
+  /* chrome bubble headline */
+  .chrome{
+    font-family:"Rubik Bubbles",cursive;
+    background:linear-gradient(180deg,#fff 0%,#d9d9e8 40%,#8f8fa8 50%,#f2f2ff 60%,#F0D9EF 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    -webkit-text-stroke:2px var(--ink);
+  }
+
+  /* glitter fill */
+  .glitter{
+    background-color:var(--blush);
+    background-image:
+      radial-gradient(circle,#fff 1px,#c0c6d4 1.5px,transparent 2px),
+      radial-gradient(circle,rgba(176,184,200,.8) 1px,transparent 1.5px),
+      linear-gradient(120deg,var(--blush),var(--lilac),var(--blue),var(--mint));
+    background-size:9px 9px,13px 13px,300% 300%;
+    background-position:0 0,4px 6px,40% 50%;
+  }
+
+  /* twinkle on hover/focus: two sparse sparkle grids fading out of phase, behind the text */
+  .glitter{position:relative;isolation:isolate}
+  .glitter::before,.glitter::after{
+    content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;opacity:0;
+    /* silver rim so the white sparkle shows on pale pastels */
+    background:radial-gradient(circle,#fff 1.5px,#c9ced9 2px,#8e97a8 2.5px,transparent 3px) 0 0/23px 19px;
+  }
+  .glitter::after{background-position:11px 9px}
+  .glitter:hover::before,.glitter:hover::after,
+  .glitter:focus-visible::before,.glitter:focus-visible::after{animation:twinkle .5s ease-in-out infinite alternate}
+  .glitter:hover::after,.glitter:focus-visible::after{animation-delay:-.25s}
+  @keyframes twinkle{from{opacity:0}to{opacity:1}}
+  /* reduced motion: sparkles just appear on hover, no blinking */
+  @media (prefers-reduced-motion:reduce){
+    .glitter:hover::before,.glitter:focus-visible::before{animation:none;opacity:1}
+    .glitter:hover::after,.glitter:focus-visible::after{animation:none}
+  }
+
+  .box{border:var(--border);box-shadow:var(--shadow);padding:24px;position:relative}
+  .spark{position:absolute;font-size:28px;line-height:1}
+  .spark.tl{top:-18px;left:-14px}
+  .spark.br{bottom:-16px;right:-12px}
+
+  /* hero */
+  .hero{background:var(--lilac);text-align:left}
+  .hero h1{font-size:clamp(44px,9vw,96px);margin:0;line-height:.95}
+  .hero p{font-size:18px;max-width:55ch}
+  .tag{display:inline-block;font-family:"Archivo Black",sans-serif;font-size:13px;
+       text-transform:uppercase;letter-spacing:.08em;background:var(--butter);
+       border:var(--border);padding:4px 10px;margin-bottom:16px}
+
+  h2{font-family:"Archivo Black",sans-serif;font-size:32px;margin:0 0 16px;text-transform:uppercase}
+
+  /* palette */
+  .swatches{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px}
+  .sw{border:var(--border);box-shadow:4px 4px 0 var(--ink);height:120px;
+      display:flex;flex-direction:column;justify-content:flex-end;padding:10px;font-weight:700}
+  .sw small{font-weight:400}
+
+  /* components */
+  .row{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+  .btn{font-family:"Archivo Black",sans-serif;font-size:16px;text-transform:uppercase;
+       border:var(--border);box-shadow:var(--shadow);padding:14px 22px;cursor:pointer;
+       transition:transform .1s,box-shadow .1s}
+  .btn:hover{transform:translate(-2px,-2px);box-shadow:8px 8px 0 var(--ink)}
+  .btn:active{transform:translate(6px,6px);box-shadow:0 0 0 var(--ink)}
+  .btn.mint{background:var(--mint)} .btn.sage{background:var(--sage)}
+  .pill{border:var(--border);border-radius:999px;padding:6px 14px;font-weight:700;background-color:var(--blue)}
+  input{font-family:inherit;font-size:16px;border:var(--border);box-shadow:4px 4px 0 var(--ink);
+        padding:12px 14px;background:#fff;min-width:0;flex:1 1 220px}
+  input:focus{outline:3px solid var(--lilac);outline-offset:3px}
+
+  /* cards */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px}
+  .card{border:var(--border);box-shadow:var(--shadow);padding:20px;display:grid;gap:10px}
+  .card h3{font-family:"Archivo Black",sans-serif;margin:0;font-size:22px}
+  .card .price{font-family:"Rubik Bubbles",cursive;font-size:30px}
+  .card.a{background:var(--mint)} .card.b{background:var(--butter)} .card.c{background:var(--blue)}
+
+  .rules{background:var(--sage)}
+  .rules li{margin:6px 0}
+  footer{text-align:center;font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section class="box hero">
+    <span class="spark tl">✦</span><span class="spark br">✧</span>
+    <span class="tag">✦ New aesthetic ✦</span>
+    <h1 class="chrome">Sorbet<br>Brutalism</h1>
+    <p>Pastel blocks, heavy black outlines and hard shadows, finished with McBling sparkle: glitter, chrome and stars.</p>
+    <div class="row">
+      <button class="btn glitter">Get the look ✦</button>
+      <button class="btn mint">See palette</button>
+    </div>
+  </section>
+
+  <section class="box">
+    <h2>Palette</h2>
+    <div class="swatches">
+      <div class="sw" style="background:var(--lilac)">Lilac<small>#F0D9EF</small></div>
+      <div class="sw" style="background:var(--mint)">Mint<small>#CDE9DC</small></div>
+      <div class="sw" style="background:var(--butter)">Butter<small>#FFE6BB</small></div>
+      <div class="sw" style="background:var(--blue)">Baby blue<small>#C4DFE5</small></div>
+      <div class="sw" style="background:var(--sage)">Sage<small>#E9ECCE</small></div>
+      <div class="sw" style="background:var(--blush)">Blush<small>#FCDCE1</small></div>
+      <div class="sw glitter">Glitter<small>accent only</small></div>
+    </div>
+  </section>
+
+  <section class="box" style="background:#fff">
+    <h2>Components</h2>
+    <div class="row" style="margin-bottom:20px">
+      <button class="btn glitter">Glitter</button>
+      <button class="btn mint">Mint</button>
+      <button class="btn sage">Sage</button>
+    </div>
+    <div class="row" style="margin-bottom:20px">
+      <span class="pill">✦ trending</span>
+      <span class="pill" style="background:var(--mint)">new</span>
+      <span class="pill" style="background:var(--butter)">limited</span>
+      <span class="pill glitter">sparkly</span>
+    </div>
+    <div class="row">
+      <label for="email" style="font-weight:700">Join the club</label>
+      <input id="email" type="email" placeholder="you@sparkle.com">
+      <button class="btn sage">Sign up</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sample cards</h2>
+    <div class="cards">
+      <div class="card a"><span class="pill">✦ bestseller</span><h3>Mint Chrome Phone Case</h3><div class="price">€19</div><button class="btn glitter">Add to bag</button></div>
+      <div class="card b"><span class="pill">new</span><h3>Butter Bubble Hoodie</h3><div class="price">€49</div><button class="btn mint">Add to bag</button></div>
+      <div class="card c"><span class="pill" style="background:var(--blush)">limited</span><h3>Rhinestone Sticker Pack</h3><div class="price">€7</div><button class="btn sage">Add to bag</button></div>
+    </div>
+  </section>
+
+  <section class="box rules">
+    <span class="spark tl">✧</span>
+    <h2>The rules</h2>
+    <ul>
+      <li><b>Structure:</b> 3px black borders, hard 6px offset shadows, chunky blocks.</li>
+      <li><b>Color:</b> a different pastel per block, with none dominating.</li>
+      <li><b>Bling:</b> glitter on key buttons, chrome bubble headlines, ✦ sparkles on corners.</li>
+      <li><b>Balance:</b> about 70% clean pastel, 30% sparkle.</li>
+    </ul>
+  </section>
+
+  <footer>✦ Sorbet Brutalism ✦</footer>
+</div>
+</body>
+</html>
