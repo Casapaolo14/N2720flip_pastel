@@ -1,0 +1,139 @@
+/* Sorbet Brutalism for a 240×320 KaiOS screen (Gecko 48).
+   No grid, clamp(), flex gap or :focus-visible: Gecko 48 drops whole rules that use them. */
+
+@font-face{font-family:"Archivo Black";src:url(fonts/archivo-black.woff2) format("woff2")}
+@font-face{font-family:"Rubik Bubbles";src:url(fonts/rubik-bubbles.woff2) format("woff2")}
+@font-face{font-family:"Space Mono";font-weight:400;src:url(fonts/space-mono-400.woff2) format("woff2")}
+@font-face{font-family:"Space Mono";font-weight:700;src:url(fonts/space-mono-700.woff2) format("woff2")}
+
+:root{
+  --lilac:#F0D9EF; --mint:#CDE9DC; --butter:#FFE6BB;
+  --blue:#C4DFE5; --sage:#E9ECCE; --blush:#FCDCE1;
+  --ink:#000; --paper:#FFFDF7;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;display:flex;flex-direction:column;overflow:hidden;
+  background:var(--paper);color:var(--ink);font:14px "Space Mono",monospace;
+  background-image:radial-gradient(var(--ink) 1px,transparent 1px);background-size:22px 22px;
+}
+
+/* ---- header: date tag + chrome clock ---- */
+#top{display:flex;justify-content:space-between;align-items:center;padding:6px 8px 2px}
+.tag{font:11px "Archivo Black",sans-serif;text-transform:uppercase;letter-spacing:.08em;
+     background:var(--butter);border:2px solid var(--ink);padding:2px 6px}
+#clock{font:24px/1 "Rubik Bubbles",cursive}
+
+/* chrome: Gecko 48 has no gradient text, so fallback = lilac fill + ink outline from text-shadow */
+.chrome{color:var(--lilac);
+  text-shadow:-2px 0 0 var(--ink),2px 0 0 var(--ink),0 -2px 0 var(--ink),0 2px 0 var(--ink)}
+@supports ((-webkit-background-clip:text) or (background-clip:text)){
+  .chrome{
+    background:linear-gradient(180deg,#fff 0%,#d9d9e8 40%,#8f8fa8 50%,#f2f2ff 60%,#F0D9EF 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    -webkit-text-stroke:2px var(--ink);text-shadow:none;
+  }
+}
+
+/* ---- app area + softkeys ---- */
+#view{flex:1;overflow:hidden;position:relative;padding:10px 8px}
+#softkeys{display:flex;justify-content:space-between;align-items:center;height:30px;padding:0 6px;
+  background:var(--paper);border-top:3px solid var(--ink);
+  font:12px "Archivo Black",sans-serif;text-transform:uppercase}
+#softkeys span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sk-mid{text-align:center;font-size:14px}
+#sk-right{text-align:right}
+
+/* ---- items ---- */
+.item{display:flex;align-items:center;position:relative;
+  border:2px solid var(--ink);box-shadow:4px 4px 0 var(--ink);
+  transition:transform .1s,box-shadow .1s}
+.p0{background-color:var(--lilac)} .p1{background-color:var(--mint)} .p2{background-color:var(--butter)}
+.p3{background-color:var(--blue)}  .p4{background-color:var(--sage)} .p5{background-color:var(--blush)}
+.item.focused{border-width:3px;transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink)}
+.icon{display:flex;align-items:center;justify-content:center;width:28px;height:28px;flex:none;
+  font:16px "Archivo Black",sans-serif}
+.icon img{width:100%;height:100%}
+.name{font:12px "Archivo Black",sans-serif;text-transform:uppercase;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.key{font-weight:700}
+.extra:empty{display:none}
+
+/* ---- glitter: only ever on the focused item ---- */
+.glitter{
+  background-color:var(--blush);
+  background-image:
+    radial-gradient(circle,#fff 1px,#c0c6d4 1.5px,transparent 2px),
+    radial-gradient(circle,rgba(176,184,200,.8) 1px,transparent 1.5px),
+    linear-gradient(120deg,var(--blush),var(--lilac),var(--blue),var(--mint));
+  background-size:9px 9px,13px 13px,300% 300%;
+  background-position:0 0,4px 6px,40% 50%;
+}
+.glitter{isolation:isolate}
+.glitter::before,.glitter::after{
+  content:"";position:absolute;top:0;right:0;bottom:0;left:0;z-index:-1;pointer-events:none;border-radius:inherit;opacity:0;
+  background:radial-gradient(circle,#fff 1.5px,#c9ced9 2px,#8e97a8 2.5px,transparent 3px) 0 0/23px 19px;
+}
+.glitter::after{background-position:11px 9px}
+/* a homescreen always has focus, so twinkle is a short burst per move (even count ends at 0), not a loop */
+.focused.glitter::before,.focused.glitter::after{animation:twinkle .5s ease-in-out 6 alternate}
+.focused.glitter::after{animation-delay:-.25s}
+@keyframes twinkle{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  .focused.glitter::before{animation:none;opacity:1}
+  .focused.glitter::after{animation:none}
+  .item{transition:none}
+}
+
+/* ===== 1 · Tiles: 3-wide pastel squares ===== */
+[data-layout="1"] #view{display:flex;flex-wrap:wrap;align-content:flex-start}
+[data-layout="1"] .item{width:64px;height:64px;margin:0 6px 12px 4px;flex-direction:column;justify-content:center;padding:4px}
+[data-layout="1"] .name{font-size:9px;max-width:100%;margin-top:4px}
+[data-layout="1"] .key{display:none}
+
+/* ===== 2 · List: stacked bars with shortcut pills ===== */
+[data-layout="2"] #view{padding-top:16px}
+[data-layout="2"] .item{height:40px;margin:0 4px 10px 0;padding:0 8px}
+[data-layout="2"] .name{flex:1;margin-left:8px;font-size:13px}
+[data-layout="2"] .key{border:2px solid var(--ink);border-radius:999px;background:#fff;min-width:26px;text-align:center;padding:0 6px}
+[data-layout="2"] .key:empty{display:none}
+[data-layout="2"] .focused .icon::after{content:"✦";position:absolute;top:-14px;left:-8px;font-size:20px;line-height:1}
+
+/* ===== 3 · Big clock: chrome hero + one-card carousel ===== */
+[data-layout="3"] #top{flex-direction:column-reverse;margin:8px 8px 0;padding:10px;
+  background:var(--lilac);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink)}
+[data-layout="3"] #clock{font-size:56px;margin-bottom:6px}
+[data-layout="3"] #view{display:flex;flex-direction:column;align-items:center;justify-content:center}
+[data-layout="3"] .item{display:none}
+[data-layout="3"] .item.focused{display:flex;flex-direction:column;justify-content:center;width:150px;height:96px}
+[data-layout="3"] .icon{width:40px;height:40px;font-size:24px}
+[data-layout="3"] .name{font-size:15px;margin-top:6px;max-width:130px}
+[data-layout="3"] .key{display:none}
+[data-layout="3"] .extra{margin-top:12px;border:2px solid var(--ink);border-radius:999px;background:var(--blue);padding:0 10px;font-weight:700}
+[data-layout="3"] .extra::before{content:"◂ "} [data-layout="3"] .extra::after{content:" ▸"}
+
+/* ===== 4 · Receipt: price-list rows on white paper ===== */
+[data-layout="4"] #view{margin:8px 12px 12px 8px;padding:6px 10px;background:#fff;
+  border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink)}
+[data-layout="4"] .item,[data-layout="4"] .item.focused{border:0;border-bottom:2px dashed var(--ink);box-shadow:none;transform:none;
+  background:transparent;padding:5px 2px}
+[data-layout="4"] .item.glitter{background:var(--mint)}
+[data-layout="4"] .item::before,[data-layout="4"] .item::after{display:none}
+[data-layout="4"] .icon{display:none}
+[data-layout="4"] .name{flex:1;font:13px "Space Mono",monospace;text-transform:none}
+[data-layout="4"] .focused .name{font-weight:700}
+[data-layout="4"] .key::before{content:"#"}
+[data-layout="4"] .key:empty::before{content:""}
+[data-layout="4"] .extra{text-align:right;font:22px "Rubik Bubbles",cursive;padding-top:6px}
+
+/* ===== 5 · Dial pad: pills matching the physical keys ===== */
+[data-layout="5"] #view{display:flex;flex-wrap:wrap;align-content:flex-start}
+[data-layout="5"] .item{width:64px;height:42px;margin:0 6px 10px 4px;border-radius:999px;
+  flex-direction:column;justify-content:center;background-color:#fff}
+[data-layout="5"] .item:nth-child(2n){background-color:var(--mint)}
+[data-layout="5"] .item:nth-child(3n){background-color:var(--butter)}
+[data-layout="5"] .item.glitter{background-color:var(--blush)}
+[data-layout="5"] .icon{display:none}
+[data-layout="5"] .key{order:-1;font:18px/1 "Archivo Black",sans-serif}
+[data-layout="5"] .name{font:9px "Space Mono",monospace;font-weight:700;max-width:54px}

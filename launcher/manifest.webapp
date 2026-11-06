@@ -1,0 +1,17 @@
+{
+  "name": "Sorbet Launcher",
+  "description": "Sorbet Brutalism homescreen: 5 layouts, press # to switch",
+  "version": "1.0.0",
+  "type": "certified",
+  "role": "homescreen",
+  "origin": "app://sorbet-launcher",
+  "launch_path": "/index.html",
+  "icons": { "56": "/icons/56.png", "112": "/icons/112.png" },
+  "developer": { "name": "Paolo Casagrande" },
+  "default_locale": "en-US",
+  "orientation": "portrait",
+  "permissions": {
+    "webapps-manage": {},
+    "settings": { "access": "readonly" }
+  }
+}
