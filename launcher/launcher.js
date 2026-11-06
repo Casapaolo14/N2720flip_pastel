@@ -9,7 +9,7 @@ const view = document.getElementById('view');
 let apps = [];      // [{name, icon, run}]
 let focus = 0;
 let number = '';  // dial panel is open while this is non-empty
-let keys = ['', 'Open', ''];  // softkey labels for the tile grid
+let keys = ['', 'Apri', ''];  // softkey labels for the tile grid
 
 // Pure grid focus math, so it can be checked without a DOM.
 function nav(i, key, n, cols) {
@@ -32,12 +32,19 @@ function iconUrl(app, icons) {
   return /^[a-z]+:/.test(path) ? path : app.origin + path;
 }
 
+// Italian name from the manifest's locales, falling back to the default name.
+function itName(m) {
+  const it = m.locales && m.locales['it-IT'];
+  return (it && it.name) || m.name;
+}
+
 function getApps() {
   if (!navigator.mozApps || !navigator.mozApps.mgmt) {
     // Desktop preview: mock apps so the layout can be checked in Responsive Design Mode.
-    return Promise.resolve(['Call log', 'Messages', 'Contacts', 'Camera', 'Gallery', 'Music',
-      'FM Radio', 'Browser', 'Settings', 'Calendar', 'Clock', 'Notes']
-      .map(name => ({ name, icon: '', run: () => console.log('launch', name) })));
+    return Promise.resolve([['Registro chiamate', 'communications'], ['Messaggi', 'sms'], ['Contatti', 'contact'],
+      ['Fotocamera', 'camera'], ['Galleria', 'gallery'], ['Musica', 'music'], ['Radio FM', 'fm'], ['Browser', 'search'],
+      ['Impostazioni', 'settings'], ['Calendario', 'calendar'], ['Orologio', 'clock'], ['Note', 'notes']]
+      .map(a => ({ name: a[0], origin: 'app://' + a[1] + '.gaiamobile.org', icon: '', run: () => console.log('apri', a[0]) })));
   }
   return new Promise((resolve, reject) => {
     const req = navigator.mozApps.mgmt.getAll();
@@ -51,10 +58,10 @@ function getApps() {
           Object.keys(m.entry_points).forEach(ep => {
             const e = m.entry_points[ep];
             if (!e.launch_path) return;
-            out.push({ name: e.name || m.name, icon: iconUrl(app, e.icons || m.icons), run: () => app.launch(ep) });
+            out.push({ name: e.name ? itName(e) : itName(m), origin: app.origin, icon: iconUrl(app, e.icons || m.icons), run: () => app.launch(ep) });
           });
         } else if (m.launch_path) {
-          out.push({ name: m.name, icon: iconUrl(app, m.icons), run: () => app.launch() });
+          out.push({ name: itName(m), origin: app.origin, icon: iconUrl(app, m.icons), run: () => app.launch() });
         }
       });
       resolve(out);
@@ -62,8 +69,9 @@ function getApps() {
   });
 }
 
+// Match by origin, not name: names are localized.
 function findApp(re) {
-  return apps.filter(a => re.test(a.name))[0];
+  return apps.filter(a => re.test(a.origin))[0];
 }
 
 // Pure dial-panel editing, so it can be checked without a DOM.
@@ -89,7 +97,7 @@ function setNumber(n) {
   num.textContent = n;
   num.className = n.length > 10 ? 'long' : '';
   box.hidden = !n;
-  if (n) softkeys('', 'Call', 'Delete');
+  if (n) softkeys('', 'Chiama', 'Cancella');
   else softkeys(keys[0], keys[1], keys[2]);
 }
 
@@ -143,15 +151,15 @@ function setFocus(i) {
 function tick() {
   const d = new Date();
   document.getElementById('date').textContent =
-    ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth() + 1);
+    ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'][d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth() + 1);
 }
 
 function load() {
   return getApps().then(list => {
     apps = list;
-    const left = findApp(/notice/i) || findApp(/messag/i);
-    const right = findApp(/contact/i);
-    keys = [left ? left.name : '', 'Open', right ? right.name : ''];
+    const left = findApp(/\/\/sms\./);
+    const right = findApp(/\/\/contact\./);
+    keys = [left ? left.name : '', 'Apri', right ? right.name : ''];
     if (!number) softkeys(keys[0], keys[1], keys[2]);
     render();
   }).catch(e => console.error('Sorbet launcher: cannot list apps', e));
@@ -172,7 +180,7 @@ window.addEventListener('keydown', e => {
   } else if (k === 'Enter') {
     if (apps[focus]) apps[focus].run();
   } else if (k === 'SoftLeft' || k === 'SoftRight') {
-    const a = k === 'SoftLeft' ? findApp(/notice/i) || findApp(/messag/i) : findApp(/contact/i);
+    const a = k === 'SoftLeft' ? findApp(/\/\/sms\./) : findApp(/\/\/contact\./);
     if (a) a.run();
   } else if (DIAL_KEYS.test(k)) {
     setNumber(k);
