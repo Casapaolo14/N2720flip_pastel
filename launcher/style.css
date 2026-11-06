@@ -2,7 +2,7 @@
    No grid, clamp(), flex gap or :focus-visible: Gecko 48 drops whole rules that use them. */
 
 @font-face{font-family:"Archivo Black";src:url(fonts/archivo-black.woff2) format("woff2")}
-@font-face{font-family:"Rubik Bubbles";src:url(fonts/rubik-bubbles.woff2) format("woff2")}
+@font-face{font-family:"Bungee";src:url(fonts/bungee.woff2) format("woff2")}
 @font-face{font-family:"Space Mono";font-weight:400;src:url(fonts/space-mono-400.woff2) format("woff2")}
 @font-face{font-family:"Space Mono";font-weight:700;src:url(fonts/space-mono-700.woff2) format("woff2")}
 
@@ -19,11 +19,11 @@ body{
   background-image:radial-gradient(var(--ink) 1px,transparent 1px);background-size:22px 22px;
 }
 
-/* ---- header: date tag + chrome clock ---- */
+/* ---- header: date tag + chrome battery % (the status bar already shows the time) ---- */
 #top{display:flex;justify-content:space-between;align-items:center;padding:6px 8px 2px}
 .tag{font:11px "Archivo Black",sans-serif;text-transform:uppercase;letter-spacing:.08em;
      background:var(--butter);border:2px solid var(--ink);padding:2px 6px}
-#clock{font:24px/1 "Rubik Bubbles",cursive}
+#batt{font:22px/1 "Bungee",sans-serif}
 
 /* chrome: Gecko 48 has no gradient text, so fallback = lilac fill + ink outline from text-shadow */
 .chrome{color:var(--lilac);
@@ -45,6 +45,13 @@ body{
 #sk-mid{text-align:center;font-size:14px}
 #sk-right{text-align:right}
 
+/* ---- dial panel: opens on a number key, over the bottom of the grid (no display rule, so [hidden] works) ---- */
+#dialer{position:absolute;left:8px;right:12px;bottom:42px;padding:6px 8px 8px;background:#fff;
+  border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink)}
+#dialer .tag{font-size:10px}
+#dial-num{font:26px/1.2 "Bungee",sans-serif;text-align:right;white-space:nowrap;overflow:hidden;margin-top:6px}
+#dial-num.long{font-size:16px}
+
 /* ---- items ---- */
 .item{display:flex;align-items:center;position:relative;
   border:2px solid var(--ink);box-shadow:4px 4px 0 var(--ink);
@@ -57,8 +64,6 @@ body{
 .icon img{width:100%;height:100%}
 .name{font:12px "Archivo Black",sans-serif;text-transform:uppercase;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.key{font-weight:700}
-.extra:empty{display:none}
 
 /* ---- glitter: only ever on the focused item ---- */
 .glitter{
@@ -86,54 +91,7 @@ body{
   .item{transition:none}
 }
 
-/* ===== 1 · Tiles: 3-wide pastel squares ===== */
-[data-layout="1"] #view{display:flex;flex-wrap:wrap;align-content:flex-start}
-[data-layout="1"] .item{width:64px;height:64px;margin:0 6px 12px 4px;flex-direction:column;justify-content:center;padding:4px}
-[data-layout="1"] .name{font-size:9px;max-width:100%;margin-top:4px}
-[data-layout="1"] .key{display:none}
-
-/* ===== 2 · List: stacked bars with shortcut pills ===== */
-[data-layout="2"] #view{padding-top:16px}
-[data-layout="2"] .item{height:40px;margin:0 4px 10px 0;padding:0 8px}
-[data-layout="2"] .name{flex:1;margin-left:8px;font-size:13px}
-[data-layout="2"] .key{border:2px solid var(--ink);border-radius:999px;background:#fff;min-width:26px;text-align:center;padding:0 6px}
-[data-layout="2"] .key:empty{display:none}
-[data-layout="2"] .focused .icon::after{content:"✦";position:absolute;top:-14px;left:-8px;font-size:20px;line-height:1}
-
-/* ===== 3 · Big clock: chrome hero + one-card carousel ===== */
-[data-layout="3"] #top{flex-direction:column-reverse;margin:8px 8px 0;padding:10px;
-  background:var(--lilac);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink)}
-[data-layout="3"] #clock{font-size:56px;margin-bottom:6px}
-[data-layout="3"] #view{display:flex;flex-direction:column;align-items:center;justify-content:center}
-[data-layout="3"] .item{display:none}
-[data-layout="3"] .item.focused{display:flex;flex-direction:column;justify-content:center;width:150px;height:96px}
-[data-layout="3"] .icon{width:40px;height:40px;font-size:24px}
-[data-layout="3"] .name{font-size:15px;margin-top:6px;max-width:130px}
-[data-layout="3"] .key{display:none}
-[data-layout="3"] .extra{margin-top:12px;border:2px solid var(--ink);border-radius:999px;background:var(--blue);padding:0 10px;font-weight:700}
-[data-layout="3"] .extra::before{content:"◂ "} [data-layout="3"] .extra::after{content:" ▸"}
-
-/* ===== 4 · Receipt: price-list rows on white paper ===== */
-[data-layout="4"] #view{margin:8px 12px 12px 8px;padding:6px 10px;background:#fff;
-  border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink)}
-[data-layout="4"] .item,[data-layout="4"] .item.focused{border:0;border-bottom:2px dashed var(--ink);box-shadow:none;transform:none;
-  background:transparent;padding:5px 2px}
-[data-layout="4"] .item.glitter{background:var(--mint)}
-[data-layout="4"] .item::before,[data-layout="4"] .item::after{display:none}
-[data-layout="4"] .icon{display:none}
-[data-layout="4"] .name{flex:1;font:13px "Space Mono",monospace;text-transform:none}
-[data-layout="4"] .focused .name{font-weight:700}
-[data-layout="4"] .key::before{content:"#"}
-[data-layout="4"] .key:empty::before{content:""}
-[data-layout="4"] .extra{text-align:right;font:22px "Rubik Bubbles",cursive;padding-top:6px}
-
-/* ===== 5 · Dial pad: pills matching the physical keys ===== */
-[data-layout="5"] #view{display:flex;flex-wrap:wrap;align-content:flex-start}
-[data-layout="5"] .item{width:64px;height:42px;margin:0 6px 10px 4px;border-radius:999px;
-  flex-direction:column;justify-content:center;background-color:#fff}
-[data-layout="5"] .item:nth-child(2n){background-color:var(--mint)}
-[data-layout="5"] .item:nth-child(3n){background-color:var(--butter)}
-[data-layout="5"] .item.glitter{background-color:var(--blush)}
-[data-layout="5"] .icon{display:none}
-[data-layout="5"] .key{order:-1;font:18px/1 "Archivo Black",sans-serif}
-[data-layout="5"] .name{font:9px "Space Mono",monospace;font-weight:700;max-width:54px}
+/* ---- tiles: 3-wide pastel squares ---- */
+#view{display:flex;flex-wrap:wrap;align-content:flex-start}
+.item{width:64px;height:64px;margin:0 6px 12px 4px;flex-direction:column;justify-content:center;padding:4px}
+.name{font-size:9px;max-width:100%;margin-top:4px}

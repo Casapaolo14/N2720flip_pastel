@@ -1,26 +1,27 @@
 # Sorbet Launcher: Nokia 2720 Flip (KaiOS 2.5.2)
 
-A homescreen in the Sorbet Brutalism style (`../sorbet-brutalism-guidelines.md`) with 5 layouts.
+A homescreen in the Sorbet Brutalism style (`../sorbet-brutalism-guidelines.md`) as a 3-wide grid of pastel tiles. The header shows the date and battery %; the time is already in the status bar.
 
 | Key | Action |
 |-----|--------|
 | D-pad | Move focus |
 | Enter | Open the focused app |
-| `1`–`9`, `0` | Open app 1–10 directly |
-| `#` | Next layout (Tiles → List → Clock → Receipt → Dial). The choice is saved. |
-| `*` | Sort apps A–Z or in install order |
+| `0`–`9`, `*`, `#` | Open the Sorbet dial panel and keep typing the number |
+| Back / SoftRight (in the panel) | Delete the last digit. Back on an empty number closes the panel. |
+| Enter / Call (in the panel) | Hand the number to the stock "Call <number>?" dialog, then press Call again. The stock dialog handles SIM choice, emergency numbers and `*#` codes. |
 | SoftLeft / SoftRight | Notices (or Messages) / Contacts |
 
-**Desktop preview:** open `index.html` in Firefox, press Ctrl+Shift+M and set the size to 240×320. Mock apps appear in place of real ones.
+**Desktop preview:** open `index.html` in Firefox, press Ctrl+Shift+M and set the size to 240×320. Mock apps and a mock 87% battery appear in place of real ones; Enter and number keys log `launch …` / `dial …` to the console (Ctrl+Shift+K). For an engine closer to the phone (Gecko 56 vs the phone's 48), open it in Waterfox Classic instead: `GDK_BACKEND=x11 ~/kaios-tools/waterfox-classic/waterfox -no-remote -profile ~/kaios-tools/wf-profile ~/Desktop/N2720flip_pastel/launcher/index.html`.
 
 ## Editing the homescreen
 1. Edit the files in this folder:
-   - `style.css`: the look. Each layout is a `[data-layout="N"]` block.
-   - `launcher.js`: the `LAYOUTS` list, the keys, and which apps are hidden (`HIDDEN_ROLES`).
+   - `style.css`: the look (colours, tile size, glitter).
+   - `launcher.js`: the keys and which apps are hidden (`HIDDEN_ROLES`).
    - `index.html`: the header and softkey bar.
 2. Preview the change on desktop (see above).
-3. Phone on USB, then `adb forward tcp:6000 localfilesystem:/data/local/debugger-socket`. Start Waterfox (step 6 below) → WebIDE → Remote Runtime → the project is still listed → ▶. The app reinstalls in place.
-4. Press End on the phone. If it still shows the old version, run `adb shell stop b2g && adb shell start b2g`.
+3. Phone on USB, then run `./deploy.sh`. It zips this folder and saves the installed version to `~/kaios-tools/backup/application.zip.prev`. Then it swaps the package on the phone over adb (root), checks the checksum, and restarts the phone UI (about 20 s).
+   - To roll back: `adb root && adb shell stop b2g && adb push ~/kaios-tools/backup/application.zip.prev /data/local/webapps/sorbet-launcher/application.zip && adb shell start b2g`.
+   - If you change `manifest.webapp` **permissions**, reinstall once with WebIDE (step 6 below) instead, because the phone stores permissions at install time.
 
 Firmware limits (Gecko 48): no CSS grid, no `clamp()`, no flex `gap`, no `:focus-visible`, no async/await. Gecko 48 drops a whole rule if one selector in it is unknown.
 

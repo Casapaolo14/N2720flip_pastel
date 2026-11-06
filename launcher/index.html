@@ -7,16 +7,17 @@
 <link rel="stylesheet" href="style.css">
 <script src="launcher.js" defer></script>
 </head>
-<body data-layout="1">
+<body>
   <header id="top">
     <span id="date" class="tag"></span>
-    <span id="clock" class="chrome"></span>
+    <span id="batt" class="chrome"></span>
   </header>
   <main id="view" aria-live="polite"></main>
+  <div id="dialer" hidden><span class="tag">Dial</span><div id="dial-num"></div></div>
   <footer id="softkeys">
-    <span id="sk-left">Notices</span>
+    <span id="sk-left"></span>
     <span id="sk-mid">Open</span>
-    <span id="sk-right">Contacts</span>
+    <span id="sk-right"></span>
   </footer>
 </body>
 </html>

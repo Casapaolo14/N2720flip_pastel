@@ -1,42 +1,29 @@
 'use strict';
 // Sorbet Launcher — Gecko 48 (KaiOS 2.5): ES6 + promises only, no async/await.
 
-// cols: 0 = carousel (left/right), 1 = vertical list, N = grid
-const LAYOUTS = [
-  { name: 'Tiles', cols: 3 },
-  { name: 'List', cols: 1 },
-  { name: 'Clock', cols: 0 },
-  { name: 'Receipt', cols: 1 },
-  { name: 'Dial', cols: 3 }
-];
+const COLS = 3;
 const HIDDEN_ROLES = ['system', 'homescreen', 'input', 'theme', 'addon', 'langpack', 'search'];
-const DIAL_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'];
+const DIAL_KEYS = /^[0-9*#]$/;
 
 const view = document.getElementById('view');
 let apps = [];      // [{name, icon, run}]
-let items = [];     // what is on screen for the current layout
 let focus = 0;
-let layout = +(localStorage.getItem('layout') || 0) % LAYOUTS.length;
-let sortAZ = localStorage.getItem('sortAZ') === '1';
-let battery = null;
+let number = '';  // dial panel is open while this is non-empty
+let keys = ['', 'Open', ''];  // softkey labels for the tile grid
 
-// Pure focus math, so it can be checked without a DOM.
+// Pure grid focus math, so it can be checked without a DOM.
 function nav(i, key, n, cols) {
   if (n === 0) return 0;
-  const fwd = cols === 1 ? 'ArrowDown' : 'ArrowRight';
-  const back = cols === 1 ? 'ArrowUp' : 'ArrowLeft';
-  if (key === fwd) return (i + 1) % n;
-  if (key === back) return (i - 1 + n) % n;
-  if (cols > 1 && key === 'ArrowDown') return i + cols < n ? i + cols : i;
-  if (cols > 1 && key === 'ArrowUp') return i - cols >= 0 ? i - cols : i;
+  if (key === 'ArrowRight') return (i + 1) % n;
+  if (key === 'ArrowLeft') return (i - 1 + n) % n;
+  if (key === 'ArrowDown') return i + cols < n ? i + cols : i;
+  if (key === 'ArrowUp') return i - cols >= 0 ? i - cols : i;
   return i;
 }
 console.assert(nav(8, 'ArrowRight', 9, 3) === 0, 'grid wraps forward');
 console.assert(nav(0, 'ArrowLeft', 9, 3) === 8, 'grid wraps back');
 console.assert(nav(7, 'ArrowDown', 9, 3) === 7, 'grid clamps at bottom');
 console.assert(nav(4, 'ArrowUp', 9, 3) === 1, 'grid moves up a row');
-console.assert(nav(0, 'ArrowUp', 5, 1) === 4, 'list wraps up');
-console.assert(nav(2, 'ArrowDown', 5, 0) === 2, 'carousel ignores up/down');
 
 function iconUrl(app, icons) {
   if (!icons) return '';
@@ -47,7 +34,7 @@ function iconUrl(app, icons) {
 
 function getApps() {
   if (!navigator.mozApps || !navigator.mozApps.mgmt) {
-    // Desktop preview: mock apps so the layouts can be checked in Responsive Design Mode.
+    // Desktop preview: mock apps so the layout can be checked in Responsive Design Mode.
     return Promise.resolve(['Call log', 'Messages', 'Contacts', 'Camera', 'Gallery', 'Music',
       'FM Radio', 'Browser', 'Settings', 'Calendar', 'Clock', 'Notes']
       .map(name => ({ name, icon: '', run: () => console.log('launch', name) })));
@@ -79,6 +66,40 @@ function findApp(re) {
   return apps.filter(a => re.test(a.name))[0];
 }
 
+// Pure dial-panel editing, so it can be checked without a DOM.
+function typeKey(num, key) {
+  if (/^[0-9*#+]$/.test(key)) return num + key;
+  if (key === 'Backspace' || key === 'SoftRight') return num.slice(0, -1);
+  return num;
+}
+console.assert(typeKey('55', '1') === '551', 'dial appends');
+console.assert(typeKey('551', 'Backspace') === '55', 'dial deletes');
+console.assert(typeKey('', 'SoftRight') === '', 'delete on empty stays empty');
+
+function softkeys(l, m, r) {
+  document.getElementById('sk-left').textContent = l;
+  document.getElementById('sk-mid').textContent = m;
+  document.getElementById('sk-right').textContent = r;
+}
+
+function setNumber(n) {
+  number = n;
+  const box = document.getElementById('dialer');
+  const num = document.getElementById('dial-num');
+  num.textContent = n;
+  num.className = n.length > 10 ? 'long' : '';
+  box.hidden = !n;
+  if (n) softkeys('', 'Call', 'Delete');
+  else softkeys(keys[0], keys[1], keys[2]);
+}
+
+// The stock launcher owns the 'dial' activity: it shows "Call <number>?" and handles SIM choice, emergency and MMI codes.
+function dial(num) {
+  setNumber('');
+  if (typeof MozActivity === 'undefined') return console.log('dial', num);
+  new MozActivity({ name: 'dial', data: { type: 'webtelephony/number', number: num } });
+}
+
 function el(tag, cls, text) {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
@@ -86,37 +107,10 @@ function el(tag, cls, text) {
   return e;
 }
 
-function cycleLayout() {
-  layout = (layout + 1) % LAYOUTS.length;
-  localStorage.setItem('layout', layout);
-  focus = 0;
-  render();
-}
-
-function toggleSort() {
-  sortAZ = !sortAZ;
-  localStorage.setItem('sortAZ', sortAZ ? '1' : '0');
-  load();
-}
-
-function buildItems() {
-  if (LAYOUTS[layout].name !== 'Dial') {
-    return apps.map((a, i) => Object.assign({ key: i < 9 ? String(i + 1) : i === 9 ? '0' : '' }, a));
-  }
-  return DIAL_KEYS.map(k => {
-    if (k === '*') return { key: k, name: sortAZ ? 'A–Z' : 'Order', icon: '', run: toggleSort };
-    if (k === '#') return { key: k, name: 'Style', icon: '', run: cycleLayout };
-    const a = apps[k === '0' ? 9 : +k - 1];
-    return a ? Object.assign({ key: k }, a) : { key: k, name: '', icon: '', run: () => {} };
-  });
-}
-
 function render() {
-  document.body.setAttribute('data-layout', layout + 1);
-  items = buildItems();
   view.innerHTML = '';
-  items.forEach((it, i) => {
-    const row = el('div', 'item p' + (i % 6));
+  apps.forEach((it, i) => {
+    const tile = el('div', 'item p' + (i % 6));
     const ic = el('span', 'icon');
     if (it.icon) {
       const img = el('img');
@@ -124,93 +118,82 @@ function render() {
       img.alt = '';
       ic.appendChild(img);
     } else {
-      ic.textContent = it.key === '*' || it.key === '#' ? '✦' : (it.name[0] || '');
+      ic.textContent = it.name[0] || '';
     }
-    row.appendChild(ic);
-    row.appendChild(el('span', 'name', it.name));
-    row.appendChild(el('span', 'key', it.key));
-    view.appendChild(row);
+    tile.appendChild(ic);
+    tile.appendChild(el('span', 'name', it.name));
+    view.appendChild(tile);
   });
-  view.appendChild(el('div', 'extra'));
-  setFocus(Math.min(focus, items.length - 1));
+  setFocus(Math.min(focus, apps.length - 1));
 }
 
 function setFocus(i) {
-  const rows = view.querySelectorAll('.item');
-  if (rows[focus]) rows[focus].classList.remove('focused', 'glitter');
+  const tiles = view.querySelectorAll('.item');
+  if (tiles[focus]) tiles[focus].classList.remove('focused', 'glitter');
   focus = Math.max(0, i);
-  const cur = rows[focus];
+  const cur = tiles[focus];
   if (!cur) return;
   cur.classList.add('focused', 'glitter');
-  // scroll the focused row into view (scrollIntoView options are too new for Gecko 48)
+  // scroll the focused tile into view (scrollIntoView options are too new for Gecko 48)
   if (cur.offsetTop < view.scrollTop) view.scrollTop = cur.offsetTop - 8;
   else if (cur.offsetTop + cur.offsetHeight > view.scrollTop + view.clientHeight)
     view.scrollTop = cur.offsetTop + cur.offsetHeight - view.clientHeight + 8;
-  document.getElementById('sk-mid').textContent = items[focus].name ? 'Open' : '';
-  updateExtra();
-}
-
-function updateExtra() {
-  const extra = view.querySelector('.extra');
-  if (!extra) return;
-  const name = LAYOUTS[layout].name;
-  if (name === 'Clock') extra.textContent = (focus + 1) + ' / ' + items.length;
-  else if (name === 'Receipt') extra.textContent = 'TOTAL ' + (battery ? Math.round(battery.level * 100) + '%' : '--');
-  else extra.textContent = '';
 }
 
 function tick() {
   const d = new Date();
-  const pad = n => (n < 10 ? '0' : '') + n;
-  document.getElementById('clock').textContent = pad(d.getHours()) + ':' + pad(d.getMinutes());
   document.getElementById('date').textContent =
     ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth() + 1);
 }
 
 function load() {
   return getApps().then(list => {
-    apps = sortAZ ? list.slice().sort((a, b) => a.name.localeCompare(b.name)) : list;
+    apps = list;
     const left = findApp(/notice/i) || findApp(/messag/i);
     const right = findApp(/contact/i);
-    document.getElementById('sk-left').textContent = left ? left.name : '';
-    document.getElementById('sk-right').textContent = right ? right.name : '';
+    keys = [left ? left.name : '', 'Open', right ? right.name : ''];
+    if (!number) softkeys(keys[0], keys[1], keys[2]);
     render();
   }).catch(e => console.error('Sorbet launcher: cannot list apps', e));
 }
 
 window.addEventListener('keydown', e => {
   const k = e.key;
+  if (number) {
+    if (k === 'Enter' || k === 'Call') dial(number);
+    else if (k === 'Backspace' || k === 'SoftRight' || DIAL_KEYS.test(k)) setNumber(typeKey(number, k));
+    else if (k === 'EndCall') return setNumber('');   // let End reach the system too
+    else if (k.indexOf('Arrow') !== 0 && k !== 'SoftLeft') return;
+    e.preventDefault();   // Back on an empty number just closes the panel, it doesn't leave home
+    return;
+  }
   if (k.indexOf('Arrow') === 0) {
-    setFocus(nav(focus, k, items.length, LAYOUTS[layout].cols));
+    setFocus(nav(focus, k, apps.length, COLS));
   } else if (k === 'Enter') {
-    if (items[focus]) items[focus].run();
+    if (apps[focus]) apps[focus].run();
   } else if (k === 'SoftLeft' || k === 'SoftRight') {
     const a = k === 'SoftLeft' ? findApp(/notice/i) || findApp(/messag/i) : findApp(/contact/i);
     if (a) a.run();
-  } else if (k === '#') {
-    cycleLayout();
-  } else if (k === '*') {
-    toggleSort();
-  } else if (/^[0-9]$/.test(k)) {
-    const a = apps[k === '0' ? 9 : +k - 1];
-    if (a) a.run();
+  } else if (DIAL_KEYS.test(k)) {
+    setNumber(k);
   } else {
     return;   // let Back/End/Call reach the system
   }
   e.preventDefault();
 });
 
-if (navigator.getBattery) {
-  navigator.getBattery().then(b => {
-    battery = b;
-    b.addEventListener('levelchange', updateExtra);
-    updateExtra();
+// Desktop preview has no battery API: mock 87% so the header can be checked.
+(navigator.getBattery ? navigator.getBattery() : Promise.resolve({ level: 0.87, addEventListener() {} }))
+  .then(b => {
+    const show = () => { document.getElementById('batt').textContent = Math.round(b.level * 100) + '%'; };
+    b.addEventListener('levelchange', show);
+    show();
   });
-}
 if (navigator.mozApps && navigator.mozApps.mgmt) {
   navigator.mozApps.mgmt.addEventListener('install', load);
   navigator.mozApps.mgmt.addEventListener('uninstall', load);
 }
+document.addEventListener('visibilitychange', () => { if (document.hidden) setNumber(''); });
 tick();
-setInterval(tick, 30000);
+setInterval(tick, 60000);
 load();

@@ -29,11 +29,11 @@ Six Color Crush pastels, plus black ink and warm off-white paper. A different pa
 
 | Font          | Role                                        | Settings |
 |---------------|---------------------------------------------|----------|
-| Rubik Bubbles | Hero headline (chrome), prices              | Hero `clamp(44px, 9vw, 96px)`, line-height .95; prices 30px |
+| Bungee        | Hero headline (chrome), prices              | Hero `clamp(44px, 9vw, 96px)`, line-height .95; prices 30px |
 | Archivo Black | Section titles, buttons, tags, card titles  | Uppercase; H2 32px, H3 22px, buttons 16px, tags 13px / .08em tracking |
 | Space Mono    | Body, inputs, labels                        | 400 body, 700 labels/pills; 16–18px |
 
-- Bubble type only for the hero headline and prices.
+- Bungee only for the hero headline and prices.
 - Display labels always Archivo Black, uppercase.
 
 ## Structure
@@ -53,7 +53,7 @@ Six Color Crush pastels, plus black ink and warm off-white paper. A different pa
 - **Pill:** rounded, border, 700 weight, `background-color` (not `background`, so `.glitter` can layer on top).
 - **Tag:** butter, Archivo Black 13px uppercase, border, no shadow.
 - **Input:** white, border + 4px shadow; focus = `3px solid` lilac outline, 3px offset.
-- **Card:** pastel block, border + 6px shadow, stacked: pill → title → bubble price → button.
+- **Card:** pastel block, border + 6px shadow, stacked: pill → title → Bungee price → button.
 - **Swatch:** 120px tall, border + 4px shadow, name and hex bottom-left.
 
 ## Bling
@@ -99,7 +99,7 @@ Two sparse sparkle grids behind the text, fading out of phase — **only on hove
 
 ### Chrome headline (`.chrome`)
 
-Rubik Bubbles with a metallic vertical gradient clipped to the text and a 2px ink stroke:
+Bungee with a metallic vertical gradient clipped to the text and a 2px ink stroke:
 
 ```css
 background:linear-gradient(180deg,#fff 0%,#d9d9e8 40%,#8f8fa8 50%,#f2f2ff 60%,#F0D9EF 100%);
@@ -138,5 +138,5 @@ One chrome headline per page — the hero.
 | Glitter on 1–2 key accents per view | Glitter on whole sections or every button |
 | Static glitter, twinkle on hover only | Constant or looping page animation |
 | Silver sparkles (white + cool grey) | Tinted/warm sparkle rims (turn brown) |
-| Bubble type for hero + prices | Bubble type for body or labels |
+| Bungee for hero + prices | Bungee for body or labels |
 | `background-color` on elements that may get `.glitter` | `background` shorthand that wipes glitter layers |
